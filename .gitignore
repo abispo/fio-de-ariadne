@@ -1,7 +1,8 @@
-*.csv
 *.pyc
 *.sqlite3
 .env
 .mypy_cache/
 __pycache__/
+data/
 staticfiles/
+media/

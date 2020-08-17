@@ -1,0 +1,30 @@
+version: "3"
+services:
+
+  web:
+    build:
+      context: .
+    depends_on:
+      - db
+    ports:
+      - 8000:8000
+    volumes:
+      - ./:/fio/
+    environment:
+      SECRET_KEY: minha-chave-secreta
+      DEBUG: 1
+      ALLOWED_HOSTS: "0.0.0.0,127.0.0.1,localhost"
+      DATABASE_URL: "postgres://ariadne:fio-de@db/fio-de-ariadne"
+      DEFAULT_FILE_STORAGE: django.core.files.storage.FileSystemStorage
+      STATICFILES_STORAGE: django.contrib.staticfiles.storage.StaticFilesStorage
+
+  db:
+    image: postgres:12-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: fio-de-ariadne
+      POSTGRES_PASSWORD: fio-de
+      POSTGRES_USER: ariadne

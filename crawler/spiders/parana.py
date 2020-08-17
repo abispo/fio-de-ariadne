@@ -1,17 +1,18 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Iterator, Union
 
-from scrapy import Request, Spider
+from scrapy import Request
 from scrapy.http import Response
 
 from crawler.items import Case
+from crawler.spiders import IbgeSpider
 from crawler.text import PARSERS
-from crawler.typing import FieldValue
 
 
-class ParanaSpider(Spider):
+class ParanaSpider(IbgeSpider):
     name = "parana"
-    allowed_domains = ["desaparecidosdobrasil.org"]
+    abbr = "PR"
+    allowed_domains = ["desaparecidosdobrasil.org", "servicodados.ibge.gov.br"]
 
     def request_offset(self, offset: int) -> Request:
         base_url = "http://www.desaparecidosdobrasil.org/criancas-desaparecidas/parana/"
@@ -41,6 +42,22 @@ class ParanaSpider(Spider):
             )
 
             kwargs = {name: parser(contents) for name, parser in PARSERS.items()}
+
+            if (
+                kwargs["age_at_occurrence"] is None
+                and kwargs["dob"] is not None
+                and kwargs["missing_since"] is not None
+            ):
+                dob = datetime.strptime(str(kwargs["dob"]), "%Y-%m-%d")
+                missing_since = datetime.strptime(
+                    str(kwargs["missing_since"]), "%Y-%m-%d"
+                )
+                kwargs["age_at_occurrence"] = missing_since.year - dob.year
+
+            last_seen_at = kwargs.pop("last_seen_at")
+            last_seen_at = str(last_seen_at) if last_seen_at else ""
+            kwargs.update(self.normalize_city_for(last_seen_at))
+
             yield Case(
                 name=name,
                 url=response.urljoin(href),
